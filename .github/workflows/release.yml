@@ -1,0 +1,108 @@
+# Builds Ping for Linux, Windows and macOS. Pushing a tag like v1.0.0 also publishes a GitHub
+# release with the three archives attached; running the workflow by hand only builds them
+# (download them from the run's Artifacts section).
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  linux:
+    # Built on the oldest supported Ubuntu so the binary runs on older glibc versions too.
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y libsdl2-dev
+      - name: Build
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+          cmake --build build
+      - name: Package
+        run: |
+          mkdir -p dist/ping
+          cp build/ping config.json README.md LICENSE dist/ping/
+          tar -czf ping-${{ github.ref_name }}-linux-x86_64.tar.gz -C dist ping
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux
+          path: ping-*-linux-x86_64.tar.gz
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: vcpkg install sdl2:x64-windows
+      - name: Build
+        # The vcpkg toolchain copies SDL2.dll next to ping.exe.
+        run: |
+          cmake -S . -B build -A x64 -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake"
+          cmake --build build --config Release
+      - name: Package
+        run: |
+          New-Item -ItemType Directory -Force dist/ping | Out-Null
+          Copy-Item build/Release/ping.exe, build/Release/*.dll, config.json, README.md, LICENSE dist/ping/
+          Compress-Archive -Path dist/ping -DestinationPath ping-${{ github.ref_name }}-windows-x64.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: ping-*-windows-x64.zip
+
+  macos:
+    # Apple silicon. Homebrew's SDL2 is built for this runner's macOS version, which sets the
+    # minimum macOS version for the release.
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: brew install sdl2
+      - name: Build
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+          cmake --build build
+      - name: Package
+        # Bundle SDL2 next to the executable and point the executable at the bundled copy, then
+        # re-sign both (ad hoc), since editing the load paths invalidates their signatures.
+        run: |
+          mkdir -p dist/ping
+          cp build/ping config.json README.md LICENSE dist/ping/
+          SDL_PATH=$(otool -L build/ping | awk '/libSDL2/ {print $1}')
+          SDL_NAME=$(basename "$SDL_PATH")
+          cp -L "$SDL_PATH" "dist/ping/$SDL_NAME"
+          chmod u+w "dist/ping/$SDL_NAME"
+          install_name_tool -id "@executable_path/$SDL_NAME" "dist/ping/$SDL_NAME"
+          install_name_tool -change "$SDL_PATH" "@executable_path/$SDL_NAME" dist/ping/ping
+          codesign --force --sign - "dist/ping/$SDL_NAME" dist/ping/ping
+          # Fail if anything still points into Homebrew, since players won't have it.
+          otool -L dist/ping/ping "dist/ping/$SDL_NAME"
+          if otool -L dist/ping/ping "dist/ping/$SDL_NAME" | grep -q -e /opt/homebrew -e /usr/local; then
+            echo "Release still depends on Homebrew libraries" >&2
+            exit 1
+          fi
+          (cd dist && zip -r ../ping-${{ github.ref_name }}-macos-arm64.zip ping)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos
+          path: ping-*-macos-arm64.zip
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: [linux, windows, macos]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ github.ref_name }}" dist/* \
+            --repo "${{ github.repository }}" --title "Ping ${{ github.ref_name }}" --generate-notes

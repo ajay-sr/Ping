@@ -1,0 +1,10 @@
+{
+    "windowWidth": 800,
+    "windowHeight": 680,
+    "ballSpeedX": 0.375,
+    "ballSpeedY": 0.84,
+    "paddleSpeed": 0.67,
+    "paddleSections": 9,
+    "ballSpeedUpPerHit": 0.05,
+    "ballMaxSpeedMultiplier": 3.0
+}

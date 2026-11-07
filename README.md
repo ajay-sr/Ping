@@ -1,39 +1,86 @@
 # Ping
 
-A C++17 / SDL2 game skeleton: opens a window with two paddles (`Player` objects), one at
-each side of the screen, and a ball that bounces between them. A score bar above the play field counts the points
-each player wins when the ball passes the opposite edge. The game loop is capped at 60 frames per second.
+A two-player paddle game written in C++17 with SDL2. Bounce the ball past your opponent to
+score; the ball speeds up with every hit until someone scores. Includes a title screen, a
+square-wave soundtrack, and a `config.json` file for tuning sizes, speeds and music without
+rebuilding.
 
-## Dependencies (Ubuntu / WSL)
+## Controls
 
-```sh
-sudo apt install build-essential cmake libsdl2-dev
-```
-
-## Build & run
-
-```sh
-cmake -S . -B build
-cmake --build build
-./build/ping
-```
-
-Controls:
 - Title screen: any key starts the game
 - Left player: **W** / **S**
 - Right player: **Up** / **Down** arrows
 - **Esc** or closing the window quits.
 
+## Download and play
+
+Download the archive for your platform from the
+[Releases](https://github.com/ajay-sr/Ping/releases) page and extract it. Each archive contains
+the game, `config.json`, this README and the license.
+
+- **Linux (x86_64):** install SDL2, then run the game from the extracted folder:
+  ```sh
+  sudo apt install libsdl2-2.0-0   # Debian/Ubuntu; other distros: install the "SDL2" package
+  ./ping
+  ```
+- **Windows (64-bit):** double-click `ping.exe`. Windows may show a SmartScreen warning because
+  the game isn't signed; choose **More info**, then **Run anyway**.
+- **macOS (Apple silicon, macOS 14 or later):** the game isn't signed by Apple, so macOS blocks
+  it at first. In Terminal, from the extracted folder, run:
+  ```sh
+  xattr -dr com.apple.quarantine .
+  ./ping
+  ```
+
+## Building from source
+
+### Linux / WSL
+
+```sh
+sudo apt install build-essential cmake libsdl2-dev
+cmake -S . -B build
+cmake --build build
+./build/ping
+```
+
+### macOS
+
+```sh
+brew install cmake sdl2
+cmake -S . -B build
+cmake --build build
+./build/ping
+```
+
+### Windows
+
+With Visual Studio (C++ workload), CMake and [vcpkg](https://vcpkg.io) installed:
+
+```powershell
+vcpkg install sdl2:x64-windows
+cmake -S . -B build -A x64 -DCMAKE_TOOLCHAIN_FILE="<vcpkg root>/scripts/buildsystems/vcpkg.cmake"
+cmake --build build --config Release
+.\build\Release\ping.exe
+```
+
+Builds are optimized (`Release`) by default; pass `-DCMAKE_BUILD_TYPE=Debug` for a debug build.
+
 ## Configuration
 
-Settings are read from `config.json` in the current directory when the game starts (or from
-a path given as the first argument, e.g. `./build/ping my-config.json`), so they can be changed
-without rebuilding. Missing keys keep their defaults; if the file is missing, all defaults are used.
+Settings are read from `config.json` when the game starts, so they can be changed without
+rebuilding. The game uses the first of these it finds:
+
+1. a path given as the first argument, e.g. `./build/ping my-config.json`
+2. `config.json` in the current directory
+3. `config.json` next to the executable
+
+Missing keys keep their defaults; if no file is found, all defaults are used.
 
 | Key | Default | Meaning |
 |---|---|---|
 | `windowWidth` | 800 | Window width in pixels |
 | `windowHeight` | 680 | Window height in pixels, including the score bar |
+| `targetFps` | 60 | Frames per second (at least 1). Game speed stays the same at any frame rate, but slows down if the computer can't keep up |
 | `ballSpeedX` | 0.375 | Horizontal ball speed, in play field widths per second |
 | `ballSpeedY` | 0.84 | Vertical ball speed after a hit on a paddle's top or bottom edge, in field heights per second |
 | `paddleSpeed` | 0.67 | Paddle speed, in field heights per second |
@@ -126,3 +173,21 @@ If you have a cat, set the music volume to 0 in `config.json`:
 Square waves are harsh and repetitive, and the melody loops for as long as the game is open.
 Turning the volume to 0 silences the music without removing the melody, so you can turn it back
 up later.
+
+## Making a release
+
+The [Release workflow](.github/workflows/release.yml) builds Linux, Windows and macOS archives
+on GitHub Actions. To publish a release, push a version tag:
+
+```sh
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+The workflow builds all three platforms and creates a GitHub release for the tag with the
+archives attached. To test the builds without publishing, run the workflow by hand from the
+repository's **Actions** tab and download the archives from the run's **Artifacts** section.
+
+## License
+
+Ping is released under the [MIT License](LICENSE).

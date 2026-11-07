@@ -7,6 +7,7 @@
 #include <map>
 #include <optional>
 #include <sstream>
+#include <utility>
 #include <vector>
 
 namespace {
@@ -162,6 +163,7 @@ bool loadConfig(const std::string& path, Config& config) {
     const IntSetting intSettings[] = {
         {"windowWidth", &config.windowWidth},
         {"windowHeight", &config.windowHeight},
+        {"targetFps", &config.targetFps},
         {"paddleSections", &config.paddleSections},
     };
     const FloatSetting floatSettings[] = {

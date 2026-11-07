@@ -1,6 +1,7 @@
 {
     "windowWidth": 800,
     "windowHeight": 680,
+    "targetFps": 60,
     "ballSpeedX": 0.375,
     "ballSpeedY": 0.84,
     "paddleSpeed": 0.67,

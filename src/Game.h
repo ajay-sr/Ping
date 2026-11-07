@@ -11,8 +11,6 @@
 
 class Game {
 public:
-    static constexpr int kTargetFps = 60;
-
     explicit Game(const Config& config);
     ~Game();
 
@@ -33,6 +31,7 @@ private:
     SDL_Renderer* renderer_ = nullptr;
     bool running_ = false;
     Screen screen_ = Screen::Title;
+    int targetFps_;
 
     // Layout in pixels, derived from the config's window size.
     int windowWidth_;

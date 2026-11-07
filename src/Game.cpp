@@ -24,7 +24,8 @@ Player makePlayer(const Config& config, float fieldWidth, float fieldHeight, boo
 }  // namespace
 
 Game::Game(const Config& config)
-    : windowWidth_(config.windowWidth),
+    : targetFps_(config.targetFps),
+      windowWidth_(config.windowWidth),
       windowHeight_(config.windowHeight),
       scoreBarHeight_(windowHeight_ * kScoreBarFraction),
       fieldWidth_(static_cast<float>(windowWidth_)),
@@ -77,8 +78,8 @@ bool Game::init() {
 
 void Game::run() {
     const std::uint64_t perfFreq = SDL_GetPerformanceFrequency();
-    const std::uint64_t ticksPerFrame = perfFreq / kTargetFps;
-    const float dt = 1.0f / kTargetFps;
+    const std::uint64_t ticksPerFrame = perfFreq / targetFps_;
+    const float dt = 1.0f / targetFps_;
 
     // The music starts on the title screen and keeps looping through the game.
     jukebox_.play();

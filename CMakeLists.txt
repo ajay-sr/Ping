@@ -5,6 +5,11 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# Build optimized unless a build type is chosen explicitly.
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
+endif()
+
 find_package(SDL2 REQUIRED)
 
 add_executable(ping
@@ -19,4 +24,15 @@ add_executable(ping
     src/TitleScreen.cpp
 )
 target_link_libraries(ping PRIVATE SDL2::SDL2)
-target_compile_options(ping PRIVATE -Wall -Wextra -Wpedantic)
+
+if(WIN32)
+    # SDL2main provides WinMain, so the game opens without a console window.
+    target_link_libraries(ping PRIVATE SDL2::SDL2main)
+    set_target_properties(ping PROPERTIES WIN32_EXECUTABLE ON)
+endif()
+
+if(MSVC)
+    target_compile_options(ping PRIVATE /W4)
+else()
+    target_compile_options(ping PRIVATE -Wall -Wextra -Wpedantic)
+endif()

@@ -10,6 +10,10 @@ struct Config {
     int windowWidth = 800;
     int windowHeight = 680;
 
+    // Frames per second. Each frame advances the game by 1/targetFps seconds, so speeds don't
+    // depend on this unless the computer can't keep up.
+    int targetFps = 60;
+
     // Speeds as fractions of the play field per second.
     float ballSpeedX = 0.375f;  // of field width
     float ballSpeedY = 0.84f;   // of field height, after a hit on a paddle's top or bottom edge

@@ -4,6 +4,7 @@
 
 #include "Ball.h"
 #include "Config.h"
+#include "Jukebox.h"
 #include "Player.h"
 #include "ScoreBoard.h"
 #include "TitleScreen.h"
@@ -45,4 +46,5 @@ private:
     Ball ball_;
     ScoreBoard scoreBoard_;
     TitleScreen titleScreen_;
+    Jukebox jukebox_;
 };

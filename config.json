@@ -6,5 +6,8 @@
     "paddleSpeed": 0.67,
     "paddleSections": 9,
     "ballSpeedUpPerHit": 0.05,
-    "ballMaxSpeedMultiplier": 3.0
+    "ballMaxSpeedMultiplier": 3.0,
+    "musicVolume": 0.10,
+    "musicBpm": 60,
+    "musicMelody": [440, 523.25, 659.25, 587.33, 523.25, 440, 392, 440, 329.63, 0]
 }

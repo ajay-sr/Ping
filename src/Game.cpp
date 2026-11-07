@@ -35,9 +35,11 @@ Game::Game(const Config& config)
                               SDL_SCANCODE_DOWN)),
       ball_(Vec2{fieldWidth_ / 2.0f, fieldHeight_ / 2.0f}, fieldHeight_ * kBallSizeFraction,
             config.ballSpeedX * fieldWidth_, config.ballSpeedY * fieldHeight_,
-            config.paddleSections, config.ballSpeedUpPerHit, config.ballMaxSpeedMultiplier) {}
+            config.paddleSections, config.ballSpeedUpPerHit, config.ballMaxSpeedMultiplier),
+      jukebox_(config.musicMelody, config.musicBpm, config.musicVolume) {}
 
 Game::~Game() {
+    jukebox_.close();  // before SDL_Quit shuts the audio subsystem down
     if (renderer_) SDL_DestroyRenderer(renderer_);
     if (window_) SDL_DestroyWindow(window_);
     SDL_Quit();
@@ -49,7 +51,7 @@ bool Game::init() {
         return false;
     }
 
-    window_ = SDL_CreateWindow("Pong", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+    window_ = SDL_CreateWindow("Ping", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
                                windowWidth_, windowHeight_, SDL_WINDOW_SHOWN);
     if (!window_) {
         std::fprintf(stderr, "SDL_CreateWindow failed: %s\n", SDL_GetError());
@@ -62,6 +64,14 @@ bool Game::init() {
         return false;
     }
 
+    // Music is optional: without audio the game runs silently.
+    if (SDL_InitSubSystem(SDL_INIT_AUDIO) != 0) {
+        std::fprintf(stderr, "SDL audio init failed: %s; continuing without music\n",
+                     SDL_GetError());
+    } else if (!jukebox_.open()) {
+        std::fprintf(stderr, "Continuing without music\n");
+    }
+
     return true;
 }
 
@@ -69,6 +79,9 @@ void Game::run() {
     const std::uint64_t perfFreq = SDL_GetPerformanceFrequency();
     const std::uint64_t ticksPerFrame = perfFreq / kTargetFps;
     const float dt = 1.0f / kTargetFps;
+
+    // The music starts on the title screen and keeps looping through the game.
+    jukebox_.play();
 
     running_ = true;
     while (running_) {
